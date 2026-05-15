@@ -146,96 +146,153 @@ export default function ProductCard({ product, onRefresh }: { product: Product; 
       {expanded && (
         <div className="border-t border-gray-100">
           {product.asins.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-400 text-center">No ASINs yet</div>
+            <div className="px-4 py-3 text-sm text-gray-400 text-center">لا يوجد ASINs بعد</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
-                  <tr>
-                    <th className="px-3 py-2 text-left">ASIN</th>
-                    <th className="px-3 py-2 text-left">Title</th>
-                    <th className="px-3 py-2 text-center">قطع</th>
-                    <th className="px-3 py-2 text-right">سعر البيع</th>
-                    {product.costs.map((c) => (
-                      <th key={c.supplierId} className="px-3 py-2 text-right text-blue-600">
-                        تكلفة {c.supplier.name}
-                      </th>
-                    ))}
-                    <th className="px-3 py-2 text-right">مخزوني</th>
-                    <th className="px-3 py-2 text-right">أمازون</th>
-                    <th className="px-3 py-2 text-right">الإجمالي</th>
-                    <th className="px-3 py-2 text-center">الحالة</th>
-                    <th className="px-3 py-2 text-center">إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {product.asins.map((asin) => {
-                    const inv = asin.inventory;
-                    const myQty = inv?.myWarehouseQty ?? 0;
-                    const amzQty = inv?.amazonWarehouseQty ?? 0;
-                    const total = myQty + amzQty;
-                    const minAlert = inv?.minStockAlert ?? 10;
-                    return (
-                      <tr key={asin.id} className="hover:bg-gray-50">
-                        <td className="px-3 py-2.5 font-mono text-xs font-medium text-blue-700 whitespace-nowrap">{asin.asin}</td>
-                        <td className="px-3 py-2.5 text-xs text-gray-600 max-w-[180px] truncate">{asin.title ?? "—"}</td>
-                        <td className="px-3 py-2.5 text-center whitespace-nowrap">
-                          {editingUnitsAsinId === asin.id ? (
-                            <input
-                              type="number" min="1" step="1"
-                              value={unitsInputVal}
-                              onChange={(e) => setUnitsInputVal(e.target.value)}
-                              onBlur={() => saveUnits(asin.id)}
-                              onKeyDown={(e) => { if (e.key === "Enter") saveUnits(asin.id); if (e.key === "Escape") setEditingUnitsAsinId(null); }}
-                              autoFocus
-                              className="w-14 border border-orange-300 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-orange-400"
-                            />
-                          ) : (
-                            <button
-                              onClick={() => { setEditingUnitsAsinId(asin.id); setUnitsInputVal(String(asin.unitsPerAsin ?? 1)); }}
-                              className="text-xs font-medium text-gray-700 hover:text-orange-600 px-2 py-0.5 rounded hover:bg-orange-50"
-                            >
-                              {asin.unitsPerAsin ?? 1} قطعة
-                            </button>
-                          )}
-                        </td>
-                        <td className="px-3 py-2.5 text-right font-medium text-green-700 whitespace-nowrap">
-                          <button onClick={() => setEditingPricesAsin(asin)} className="hover:underline">
-                            {asin.sellingPrice != null ? `${asin.sellingPrice.toFixed(2)} ج.م` : <span className="text-gray-300 text-xs">+ سعر</span>}
+            <>
+              {/* Mobile cards */}
+              <div className="md:hidden divide-y divide-gray-100">
+                {product.asins.map((asin) => {
+                  const inv = asin.inventory;
+                  const myQty = inv?.myWarehouseQty ?? 0;
+                  const amzQty = inv?.amazonWarehouseQty ?? 0;
+                  const total = myQty + amzQty;
+                  const minAlert = inv?.minStockAlert ?? 10;
+                  return (
+                    <div key={asin.id} className="p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-bold text-blue-700">{asin.asin}</span>
+                        {stockBadge(total, minAlert)}
+                      </div>
+                      {asin.title && <p className="text-xs text-gray-500 truncate">{asin.title}</p>}
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div className="bg-gray-50 rounded p-2 text-center">
+                          <p className="text-gray-500">سعر البيع</p>
+                          <button onClick={() => setEditingPricesAsin(asin)} className="font-bold text-green-700 mt-0.5">
+                            {asin.sellingPrice != null ? `${asin.sellingPrice.toFixed(0)} ج.م` : <span className="text-orange-400">+ سعر</span>}
                           </button>
-                        </td>
-                        {product.costs.map((c) => {
-                          const units = asin.unitsPerAsin ?? 1;
-                          const totalCost = c.costPrice * units;
-                          return (
-                            <td key={c.supplierId} className="px-3 py-2.5 text-right whitespace-nowrap text-xs text-gray-700">
-                              {totalCost.toFixed(2)} ج.م
-                              {units > 1 && <span className="text-gray-400 mr-1">({c.costPrice.toFixed(2)}×{units})</span>}
-                            </td>
-                          );
-                        })}
-                        <td className="px-3 py-2.5 text-right font-medium text-gray-800">{myQty}</td>
-                        <td className="px-3 py-2.5 text-right font-medium text-gray-800">{amzQty}</td>
-                        <td className="px-3 py-2.5 text-right font-bold text-gray-900">{total}</td>
-                        <td className="px-3 py-2.5 text-center">{stockBadge(total, minAlert)}</td>
-                        <td className="px-3 py-2.5 text-center whitespace-nowrap">
-                          <button onClick={() => setEditingPricesAsin(asin)} className="text-xs text-orange-600 hover:underline">سعر البيع</button>
-                          <span className="text-gray-300 mx-1">|</span>
-                          <button onClick={() => setEditingInventoryAsin(asin)} className="text-xs text-blue-600 hover:underline">مخزون</button>
-                          <span className="text-gray-300 mx-1">|</span>
-                          <button onClick={() => setEditingAsin(asin)} className="text-xs text-gray-600 hover:underline">تعديل</button>
-                          <span className="text-gray-300 mx-1">|</span>
-                          <button onClick={() => handleDeleteAsin(asin.id)} className="text-xs text-red-500 hover:underline">حذف</button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                        <div className="bg-gray-50 rounded p-2 text-center">
+                          <p className="text-gray-500">مخزوني</p>
+                          <p className="font-bold text-gray-800 mt-0.5">{myQty}</p>
+                        </div>
+                        <div className="bg-gray-50 rounded p-2 text-center">
+                          <p className="text-gray-500">أمازون</p>
+                          <p className="font-bold text-gray-800 mt-0.5">{amzQty}</p>
+                        </div>
+                      </div>
+                      {product.costs.length > 0 && (
+                        <div className="flex gap-2 flex-wrap">
+                          {product.costs.map((c) => {
+                            const units = asin.unitsPerAsin ?? 1;
+                            return (
+                              <span key={c.supplierId} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                                {c.supplier.name}: {(c.costPrice * units).toFixed(0)} ج.م
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div className="flex gap-3 pt-1">
+                        <button onClick={() => setEditingPricesAsin(asin)} className="text-xs text-orange-600 font-medium">سعر البيع</button>
+                        <button onClick={() => setEditingInventoryAsin(asin)} className="text-xs text-blue-600 font-medium">مخزون</button>
+                        <button onClick={() => setEditingAsin(asin)} className="text-xs text-gray-600 font-medium">تعديل</button>
+                        <button onClick={() => handleDeleteAsin(asin.id)} className="text-xs text-red-500 font-medium">حذف</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+                    <tr>
+                      <th className="px-3 py-2 text-left">ASIN</th>
+                      <th className="px-3 py-2 text-left">Title</th>
+                      <th className="px-3 py-2 text-center">قطع</th>
+                      <th className="px-3 py-2 text-right">سعر البيع</th>
+                      {product.costs.map((c) => (
+                        <th key={c.supplierId} className="px-3 py-2 text-right text-blue-600">
+                          تكلفة {c.supplier.name}
+                        </th>
+                      ))}
+                      <th className="px-3 py-2 text-right">مخزوني</th>
+                      <th className="px-3 py-2 text-right">أمازون</th>
+                      <th className="px-3 py-2 text-right">الإجمالي</th>
+                      <th className="px-3 py-2 text-center">الحالة</th>
+                      <th className="px-3 py-2 text-center">إجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {product.asins.map((asin) => {
+                      const inv = asin.inventory;
+                      const myQty = inv?.myWarehouseQty ?? 0;
+                      const amzQty = inv?.amazonWarehouseQty ?? 0;
+                      const total = myQty + amzQty;
+                      const minAlert = inv?.minStockAlert ?? 10;
+                      return (
+                        <tr key={asin.id} className="hover:bg-gray-50">
+                          <td className="px-3 py-2.5 font-mono text-xs font-medium text-blue-700 whitespace-nowrap">{asin.asin}</td>
+                          <td className="px-3 py-2.5 text-xs text-gray-600 max-w-[180px] truncate">{asin.title ?? "—"}</td>
+                          <td className="px-3 py-2.5 text-center whitespace-nowrap">
+                            {editingUnitsAsinId === asin.id ? (
+                              <input
+                                type="number" min="1" step="1"
+                                value={unitsInputVal}
+                                onChange={(e) => setUnitsInputVal(e.target.value)}
+                                onBlur={() => saveUnits(asin.id)}
+                                onKeyDown={(e) => { if (e.key === "Enter") saveUnits(asin.id); if (e.key === "Escape") setEditingUnitsAsinId(null); }}
+                                autoFocus
+                                className="w-14 border border-orange-300 rounded px-1.5 py-0.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-orange-400"
+                              />
+                            ) : (
+                              <button
+                                onClick={() => { setEditingUnitsAsinId(asin.id); setUnitsInputVal(String(asin.unitsPerAsin ?? 1)); }}
+                                className="text-xs font-medium text-gray-700 hover:text-orange-600 px-2 py-0.5 rounded hover:bg-orange-50"
+                              >
+                                {asin.unitsPerAsin ?? 1} قطعة
+                              </button>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5 text-right font-medium text-green-700 whitespace-nowrap">
+                            <button onClick={() => setEditingPricesAsin(asin)} className="hover:underline">
+                              {asin.sellingPrice != null ? `${asin.sellingPrice.toFixed(2)} ج.م` : <span className="text-gray-300 text-xs">+ سعر</span>}
+                            </button>
+                          </td>
+                          {product.costs.map((c) => {
+                            const units = asin.unitsPerAsin ?? 1;
+                            const totalCost = c.costPrice * units;
+                            return (
+                              <td key={c.supplierId} className="px-3 py-2.5 text-right whitespace-nowrap text-xs text-gray-700">
+                                {totalCost.toFixed(2)} ج.م
+                                {units > 1 && <span className="text-gray-400 mr-1">({c.costPrice.toFixed(2)}×{units})</span>}
+                              </td>
+                            );
+                          })}
+                          <td className="px-3 py-2.5 text-right font-medium text-gray-800">{myQty}</td>
+                          <td className="px-3 py-2.5 text-right font-medium text-gray-800">{amzQty}</td>
+                          <td className="px-3 py-2.5 text-right font-bold text-gray-900">{total}</td>
+                          <td className="px-3 py-2.5 text-center">{stockBadge(total, minAlert)}</td>
+                          <td className="px-3 py-2.5 text-center whitespace-nowrap">
+                            <button onClick={() => setEditingPricesAsin(asin)} className="text-xs text-orange-600 hover:underline">سعر البيع</button>
+                            <span className="text-gray-300 mx-1">|</span>
+                            <button onClick={() => setEditingInventoryAsin(asin)} className="text-xs text-blue-600 hover:underline">مخزون</button>
+                            <span className="text-gray-300 mx-1">|</span>
+                            <button onClick={() => setEditingAsin(asin)} className="text-xs text-gray-600 hover:underline">تعديل</button>
+                            <span className="text-gray-300 mx-1">|</span>
+                            <button onClick={() => handleDeleteAsin(asin.id)} className="text-xs text-red-500 hover:underline">حذف</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
           <div className="px-4 py-3 border-t border-gray-100">
-            <button onClick={() => setShowAddAsin(true)} className="text-sm text-orange-600 hover:text-orange-800 font-medium">+ Add ASIN</button>
+            <button onClick={() => setShowAddAsin(true)} className="text-sm text-orange-600 hover:text-orange-800 font-medium">+ إضافة ASIN</button>
           </div>
         </div>
       )}

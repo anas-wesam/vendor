@@ -63,27 +63,27 @@ export default function ProductsPage() {
   );
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 md:p-8">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-          <p className="text-sm text-gray-500 mt-1">{products.length} products · {products.reduce((s, p) => s + p.asins.length, 0)} ASINs</p>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">المنتجات</h1>
+          <p className="text-xs text-gray-500 mt-0.5">{products.length} منتج · {products.reduce((s, p) => s + p.asins.length, 0)} ASIN</p>
         </div>
         <button
           onClick={() => setShowAdd(true)}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
         >
-          + Add Product
+          + إضافة
         </button>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-4">
         <input
           type="text"
-          placeholder="Search by product name, brand, or ASIN..."
+          placeholder="ابحث باسم المنتج أو ASIN..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
         />
       </div>
 
