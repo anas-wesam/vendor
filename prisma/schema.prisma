@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Supplier {
+  id          String   @id @default(cuid())
+  name        String
+  contactName String?
+  email       String?
+  phone       String?
+  country     String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products    ProductSupplier[]
+  asinCosts   AsinCost[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String?
+  brand       String?
+  category    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  suppliers   ProductSupplier[]
+  asins       Asin[]
+}
+
+model ProductSupplier {
+  productId  String
+  supplierId String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@id([productId, supplierId])
+}
+
+model Asin {
+  id           String   @id @default(cuid())
+  asin         String   @unique
+  marketplace  String   @default("EG")
+  title        String?
+  sellingPrice Float?
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventory    Inventory?
+  costs        AsinCost[]
+}
+
+model AsinCost {
+  id         String   @id @default(cuid())
+  costPrice  Float
+  updatedAt  DateTime @updatedAt
+
+  asinId     String
+  supplierId String
+  asin       Asin     @relation(fields: [asinId], references: [id], onDelete: Cascade)
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@unique([asinId, supplierId])
+}
+
+model Inventory {
+  id                  String   @id @default(cuid())
+  myWarehouseQty      Int      @default(0)
+  amazonWarehouseQty  Int      @default(0)
+  minStockAlert       Int      @default(10)
+  notes               String?
+  updatedAt           DateTime @updatedAt
+
+  asinId              String   @unique
+  asin                Asin     @relation(fields: [asinId], references: [id], onDelete: Cascade)
+}
