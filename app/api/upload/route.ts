@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -16,12 +15,9 @@ export async function POST(req: NextRequest) {
   }
 
   const ext = file.name.split(".").pop() ?? "jpg";
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  const filePath = path.join(uploadDir, filename);
+  const filename = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-  const bytes = await file.arrayBuffer();
-  await writeFile(filePath, Buffer.from(bytes));
+  const blob = await put(filename, file, { access: "public" });
 
-  return NextResponse.json({ url: `/uploads/${filename}` });
+  return NextResponse.json({ url: blob.url });
 }
