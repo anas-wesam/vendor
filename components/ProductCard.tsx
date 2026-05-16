@@ -115,14 +115,19 @@ export default function ProductCard({ product, onRefresh }: { product: Product; 
                 )}
               </div>
 
-              {/* Cost summary per supplier */}
-              {product.costs.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+              {/* Cost + selling price summary */}
+              {(product.costs.length > 0 || product.sellingPrice) && (
+                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
                   {product.costs.map((c) => (
                     <span key={c.supplierId} className="text-xs text-gray-500">
-                      <span className="font-medium text-gray-700">{c.supplier.name}:</span> {c.costPrice.toFixed(2)} ج.م
+                      <span className="font-medium text-gray-700">تكلفة {c.supplier.name}:</span> {c.costPrice.toFixed(2)} ج.م
                     </span>
                   ))}
+                  {product.sellingPrice != null && (
+                    <span className="text-xs text-green-700 font-medium">
+                      سعر أمازون: {product.sellingPrice.toFixed(2)} ج.م
+                    </span>
+                  )}
                 </div>
               )}
             </div>

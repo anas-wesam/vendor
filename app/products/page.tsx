@@ -36,6 +36,7 @@ export interface Product {
   imageUrl: string | null;
   brand: string | null;
   category: string | null;
+  sellingPrice: number | null;
   suppliers: { supplier: { id: string; name: string } }[];
   costs: ProductCost[];
   asins: Asin[];
