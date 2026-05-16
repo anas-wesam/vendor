@@ -21,7 +21,6 @@ export default function EditProductModal({
     category: product.category ?? "",
     description: product.description ?? "",
     imageUrl: product.imageUrl ?? "",
-    sellingPrice: product.sellingPrice != null ? String(product.sellingPrice) : "",
   });
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>(
@@ -46,11 +45,7 @@ export default function EditProductModal({
     const res = await fetch(`/api/products/${product.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        sellingPrice: form.sellingPrice ? parseFloat(form.sellingPrice) : null,
-        supplierIds: selectedSupplierIds,
-      }),
+      body: JSON.stringify({ ...form, supplierIds: selectedSupplierIds }),
     });
     setLoading(false);
     if (res.ok) onSave();
@@ -102,21 +97,6 @@ export default function EditProductModal({
                 autoComplete="off"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
               />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">سعر البيع على أمازون <span className="text-gray-400 font-normal">(للتوثيق)</span></label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number" step="0.01" min="0"
-                value={form.sellingPrice}
-                onChange={(e) => setForm({ ...form, sellingPrice: e.target.value })}
-                autoComplete="off"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-                placeholder="0.00"
-              />
-              <span className="text-sm text-gray-400">ج.م</span>
             </div>
           </div>
 

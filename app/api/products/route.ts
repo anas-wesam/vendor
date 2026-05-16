@@ -63,14 +63,13 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const db = getDb();
   const body = await req.json();
-  const { name, description, imageUrl, brand, category, supplierIds = [], sellingPrice } = body;
+  const { name, description, imageUrl, brand, category, supplierIds = [] } = body;
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
 
   const now = new Date().toISOString();
   const ref = await db.collection("products").add({
     name, description: description || null, imageUrl: imageUrl || null,
     brand: brand || null, category: category || null,
-    sellingPrice: sellingPrice ?? null,
     supplierIds, createdAt: now, updatedAt: now,
   });
   const product = await getProductWithRelations(ref.id);

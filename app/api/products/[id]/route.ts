@@ -13,7 +13,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const db = getDb();
   const { id } = await params;
   const body = await req.json();
-  const { name, description, imageUrl, brand, category, supplierIds, sellingPrice } = body;
+  const { name, description, imageUrl, brand, category, supplierIds } = body;
   const update: Record<string, unknown> = { updatedAt: new Date().toISOString() };
   if (name !== undefined) update.name = name;
   if (description !== undefined) update.description = description || null;
@@ -21,7 +21,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (brand !== undefined) update.brand = brand || null;
   if (category !== undefined) update.category = category || null;
   if (supplierIds !== undefined) update.supplierIds = supplierIds;
-  if (sellingPrice !== undefined) update.sellingPrice = sellingPrice ?? null;
   await db.collection("products").doc(id).update(update);
   return NextResponse.json(await getProductWithRelations(id));
 }
