@@ -4,7 +4,7 @@ import { getDb } from "@/lib/firebase";
 export async function POST(req: NextRequest) {
   const db = getDb();
   const body = await req.json();
-  const { asin, marketplace = "EG", title, sellingPrice, unitsPerAsin, productId } = body;
+  const { asin, marketplace = "EG", title, sellingPrice, marketPrice, unitsPerAsin, productId } = body;
   if (!asin || !productId) return NextResponse.json({ error: "ASIN and productId are required" }, { status: 400 });
 
   const existing = await db.collection("asins").where("asin", "==", asin).get();
@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
   const ref = await db.collection("asins").add({
     asin, marketplace, title: title || null,
     sellingPrice: sellingPrice ? parseFloat(sellingPrice) : null,
+    marketPrice: marketPrice ? parseFloat(marketPrice) : null,
     unitsPerAsin: parseInt(unitsPerAsin) || 1,
     productId, status: "active", createdAt: now, updatedAt: now,
   });

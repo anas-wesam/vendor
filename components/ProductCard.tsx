@@ -165,12 +165,28 @@ export default function ProductCard({ product, onRefresh }: { product: Product; 
                       </div>
                       {asin.title && <p className="text-xs text-gray-500 truncate">{asin.title}</p>}
                       <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div className="bg-gray-50 rounded p-2 text-center">
+                        <div className="bg-orange-50 rounded p-2 text-center">
                           <p className="text-gray-500">سعر البيع</p>
-                          <button onClick={() => setEditingPricesAsin(asin)} className="font-bold text-green-700 mt-0.5">
-                            {asin.sellingPrice != null ? `${asin.sellingPrice.toFixed(0)} ج.م` : <span className="text-orange-400">+ سعر</span>}
+                          <button onClick={() => setEditingAsin(asin)} className="font-bold text-orange-700 mt-0.5">
+                            {asin.sellingPrice != null ? `${asin.sellingPrice.toFixed(0)} ج.م` : <span className="text-gray-400">—</span>}
                           </button>
                         </div>
+                        <div className="bg-blue-50 rounded p-2 text-center">
+                          <p className="text-gray-500">سعر الماركت</p>
+                          <button onClick={() => setEditingAsin(asin)} className="font-bold text-blue-700 mt-0.5">
+                            {asin.marketPrice != null ? `${asin.marketPrice.toFixed(0)} ج.م` : <span className="text-gray-400">—</span>}
+                          </button>
+                        </div>
+                        <div className="bg-gray-50 rounded p-2 text-center">
+                          <p className="text-gray-500">تكلفة</p>
+                          <p className="font-bold text-gray-700 mt-0.5">
+                            {product.costs.length > 0
+                              ? `${(product.costs[0].costPrice * (asin.unitsPerAsin ?? 1)).toFixed(0)} ج.م`
+                              : <span className="text-gray-400">—</span>}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="bg-gray-50 rounded p-2 text-center">
                           <p className="text-gray-500">مخزوني</p>
                           <p className="font-bold text-gray-800 mt-0.5">{myQty}</p>
@@ -193,9 +209,8 @@ export default function ProductCard({ product, onRefresh }: { product: Product; 
                         </div>
                       )}
                       <div className="flex gap-3 pt-1">
-                        <button onClick={() => setEditingPricesAsin(asin)} className="text-xs text-orange-600 font-medium">سعر البيع</button>
                         <button onClick={() => setEditingInventoryAsin(asin)} className="text-xs text-blue-600 font-medium">مخزون</button>
-                        <button onClick={() => setEditingAsin(asin)} className="text-xs text-gray-600 font-medium">تعديل</button>
+                        <button onClick={() => setEditingAsin(asin)} className="text-xs text-orange-600 font-medium">تعديل</button>
                         <button onClick={() => handleDeleteAsin(asin.id)} className="text-xs text-red-500 font-medium">حذف</button>
                       </div>
                     </div>
@@ -211,9 +226,10 @@ export default function ProductCard({ product, onRefresh }: { product: Product; 
                       <th className="px-3 py-2 text-left">ASIN</th>
                       <th className="px-3 py-2 text-left">Title</th>
                       <th className="px-3 py-2 text-center">قطع</th>
-                      <th className="px-3 py-2 text-right">سعر البيع</th>
+                      <th className="px-3 py-2 text-right text-orange-600">سعر البيع</th>
+                      <th className="px-3 py-2 text-right text-blue-600">سعر الماركت</th>
                       {product.costs.map((c) => (
-                        <th key={c.supplierId} className="px-3 py-2 text-right text-blue-600">
+                        <th key={c.supplierId} className="px-3 py-2 text-right text-gray-500">
                           تكلفة {c.supplier.name}
                         </th>
                       ))}
@@ -255,9 +271,14 @@ export default function ProductCard({ product, onRefresh }: { product: Product; 
                               </button>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-medium text-green-700 whitespace-nowrap">
-                            <button onClick={() => setEditingPricesAsin(asin)} className="hover:underline">
-                              {asin.sellingPrice != null ? `${asin.sellingPrice.toFixed(2)} ج.م` : <span className="text-gray-300 text-xs">+ سعر</span>}
+                          <td className="px-3 py-2.5 text-right font-medium text-orange-700 whitespace-nowrap">
+                            <button onClick={() => setEditingAsin(asin)} className="hover:underline">
+                              {asin.sellingPrice != null ? `${asin.sellingPrice.toFixed(2)} ج.م` : <span className="text-gray-300 text-xs">—</span>}
+                            </button>
+                          </td>
+                          <td className="px-3 py-2.5 text-right font-medium text-blue-700 whitespace-nowrap">
+                            <button onClick={() => setEditingAsin(asin)} className="hover:underline">
+                              {asin.marketPrice != null ? `${asin.marketPrice.toFixed(2)} ج.م` : <span className="text-gray-300 text-xs">—</span>}
                             </button>
                           </td>
                           {product.costs.map((c) => {
@@ -275,11 +296,9 @@ export default function ProductCard({ product, onRefresh }: { product: Product; 
                           <td className="px-3 py-2.5 text-right font-bold text-gray-900">{total}</td>
                           <td className="px-3 py-2.5 text-center">{stockBadge(total, minAlert)}</td>
                           <td className="px-3 py-2.5 text-center whitespace-nowrap">
-                            <button onClick={() => setEditingPricesAsin(asin)} className="text-xs text-orange-600 hover:underline">سعر البيع</button>
-                            <span className="text-gray-300 mx-1">|</span>
                             <button onClick={() => setEditingInventoryAsin(asin)} className="text-xs text-blue-600 hover:underline">مخزون</button>
                             <span className="text-gray-300 mx-1">|</span>
-                            <button onClick={() => setEditingAsin(asin)} className="text-xs text-gray-600 hover:underline">تعديل</button>
+                            <button onClick={() => setEditingAsin(asin)} className="text-xs text-orange-600 hover:underline">تعديل</button>
                             <span className="text-gray-300 mx-1">|</span>
                             <button onClick={() => handleDeleteAsin(asin.id)} className="text-xs text-red-500 hover:underline">حذف</button>
                           </td>

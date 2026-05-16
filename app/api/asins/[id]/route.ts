@@ -10,6 +10,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (body.marketplace !== undefined) update.marketplace = body.marketplace;
   if (body.title !== undefined) update.title = body.title || null;
   if (body.sellingPrice !== undefined) update.sellingPrice = body.sellingPrice != null ? parseFloat(body.sellingPrice) : null;
+  if (body.marketPrice !== undefined) update.marketPrice = body.marketPrice != null ? parseFloat(body.marketPrice) : null;
   if (body.status !== undefined) update.status = body.status;
   if (body.unitsPerAsin !== undefined) update.unitsPerAsin = parseInt(body.unitsPerAsin) || 1;
   await db.collection("asins").doc(id).update(update);

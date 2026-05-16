@@ -19,6 +19,7 @@ export default function EditAsinModal({
     marketplace: asin.marketplace,
     title: asin.title ?? "",
     sellingPrice: asin.sellingPrice != null ? String(asin.sellingPrice) : "",
+    marketPrice: asin.marketPrice != null ? String(asin.marketPrice) : "",
     unitsPerAsin: String(asin.unitsPerAsin ?? 1),
   });
   const [loading, setLoading] = useState(false);
@@ -36,6 +37,7 @@ export default function EditAsinModal({
         marketplace: form.marketplace,
         title: form.title || null,
         sellingPrice: form.sellingPrice ? parseFloat(form.sellingPrice) : null,
+        marketPrice: form.marketPrice ? parseFloat(form.marketPrice) : null,
         unitsPerAsin: parseInt(form.unitsPerAsin) || 1,
       }),
     });
@@ -50,7 +52,7 @@ export default function EditAsinModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="font-semibold text-gray-900">تعديل ASIN</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
@@ -69,15 +71,27 @@ export default function EditAsinModal({
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Marketplace</label>
-            <select
-              value={form.marketplace}
-              onChange={(e) => setForm({ ...form, marketplace: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-            >
-              {MARKETPLACES.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Marketplace</label>
+              <select
+                value={form.marketplace}
+                onChange={(e) => setForm({ ...form, marketplace: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              >
+                {MARKETPLACES.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">عدد القطع</label>
+              <input
+                type="number" min="1" step="1"
+                value={form.unitsPerAsin}
+                onChange={(e) => setForm({ ...form, unitsPerAsin: e.target.value })}
+                autoComplete="off"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
           </div>
 
           <div>
@@ -92,27 +106,44 @@ export default function EditAsinModal({
             />
           </div>
 
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-700 mb-1">سعر البيع (ج.م)</label>
-              <input
-                type="number" step="0.01" min="0"
-                value={form.sellingPrice}
-                onChange={(e) => setForm({ ...form, sellingPrice: e.target.value })}
-                autoComplete="off"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-                placeholder="0.00"
-              />
+          {/* Prices */}
+          <div className="bg-gray-50 rounded-xl p-3 space-y-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">الأسعار</p>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                سعر البيع لأمازون
+                <span className="text-gray-400 font-normal mr-1">(الفاتورة)</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" step="0.01" min="0"
+                  value={form.sellingPrice}
+                  onChange={(e) => setForm({ ...form, sellingPrice: e.target.value })}
+                  autoComplete="off"
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  placeholder="0.00"
+                />
+                <span className="text-sm text-gray-400">ج.م</span>
+              </div>
             </div>
-            <div className="w-28">
-              <label className="block text-xs font-medium text-gray-700 mb-1">عدد القطع</label>
-              <input
-                type="number" min="1" step="1"
-                value={form.unitsPerAsin}
-                onChange={(e) => setForm({ ...form, unitsPerAsin: e.target.value })}
-                autoComplete="off"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-              />
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                سعر الماركت
+                <span className="text-gray-400 font-normal mr-1">(سعر الكاستومر على أمازون)</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" step="0.01" min="0"
+                  value={form.marketPrice}
+                  onChange={(e) => setForm({ ...form, marketPrice: e.target.value })}
+                  autoComplete="off"
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  placeholder="0.00"
+                />
+                <span className="text-sm text-gray-400">ج.م</span>
+              </div>
             </div>
           </div>
 

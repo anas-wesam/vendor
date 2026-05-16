@@ -24,6 +24,7 @@ export interface Asin {
   marketplace: string;
   title: string | null;
   sellingPrice: number | null;
+  marketPrice: number | null;
   status: string;
   unitsPerAsin: number;
   inventory: Inventory | null;
