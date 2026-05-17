@@ -3,26 +3,6 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 
-function resizeToDataUrl(file: File, maxSize = 600, quality = 0.82): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new window.Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
-      const w = Math.round(img.width * scale);
-      const h = Math.round(img.height * scale);
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL("image/jpeg", quality));
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
-}
-
 export default function ImageUpload({
   value,
   onChange,
@@ -36,30 +16,23 @@ export default function ImageUpload({
 
   const handleFile = async (file: File) => {
     setError("");
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
-      setError("JPG, PNG, WebP, GIF فقط");
-      return;
-    }
     setUploading(true);
-    try {
-      const dataUrl = await resizeToDataUrl(file);
-      onChange(dataUrl);
-    } catch {
-      setError("فشل تحميل الصورة");
-    } finally {
-      setUploading(false);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    setUploading(false);
+    if (res.ok) {
+      const data = await res.json();
+      onChange(data.url);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "فشل رفع الصورة");
     }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
     if (file) handleFile(file);
   };
 
@@ -89,7 +62,7 @@ export default function ImageUpload({
           className="w-full h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-colors"
         >
           {uploading ? (
-            <div className="text-sm text-gray-400">جاري التحميل...</div>
+            <div className="text-sm text-gray-400">جاري الرفع...</div>
           ) : (
             <>
               <span className="text-3xl mb-2">🖼️</span>
@@ -99,7 +72,13 @@ export default function ImageUpload({
           )}
         </div>
       )}
-      <input ref={inputRef} type="file" accept="image/*" onChange={handleChange} className="hidden" />
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+        className="hidden"
+      />
       {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
     </div>
   );
