@@ -10,6 +10,7 @@ const navItems = [
   { href: "/inventory", label: "المخزون", icon: "🗃️" },
   { href: "/suppliers", label: "الموردين", icon: "🏭" },
   { href: "/calculator", label: "الحاسبة", icon: "🧮" },
+  { href: "/po", label: "طلبيات PO", icon: "📋" },
 ];
 
 export default function Sidebar() {
