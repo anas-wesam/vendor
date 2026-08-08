@@ -4,27 +4,29 @@ import { useRef, useState } from "react";
 import * as XLSX from "xlsx";
 
 interface PoLine { asin: string; title: string; qty: number; }
+interface PoRow extends PoLine { units: number; }
 
-function downloadSummarySheet(lines: PoLine[]) {
-  // Group by title (item name)
+function downloadSummarySheet(rows: PoRow[]) {
   const grouped = new Map<string, number>();
-  for (const l of lines) {
-    grouped.set(l.title, (grouped.get(l.title) ?? 0) + l.qty);
+  for (const r of rows) {
+    const total = r.qty * r.units;
+    grouped.set(r.title, (grouped.get(r.title) ?? 0) + total);
   }
-  const rows = [["الصنف", "الكمية المطلوبة"]];
-  for (const [title, qty] of grouped) rows.push([title, String(qty)]);
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws["!cols"] = [{ wch: 50 }, { wch: 18 }];
+  const data = [["الصنف", "الكمية المطلوبة (قطع)"]];
+  for (const [title, qty] of grouped) data.push([title, String(qty)]);
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws["!cols"] = [{ wch: 50 }, { wch: 22 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "ملخص الأصناف");
   XLSX.writeFile(wb, "po-summary.xlsx");
 }
 
-function downloadAsinSheet(lines: PoLine[]) {
-  const rows = [["ASIN", "الصنف", "الكمية"]];
-  for (const l of lines) rows.push([l.asin, l.title, String(l.qty)]);
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws["!cols"] = [{ wch: 14 }, { wch: 50 }, { wch: 12 }];
+function downloadAsinSheet(rows: PoRow[]) {
+  const data = [["ASIN", "الصنف", "كمية الـ ASIN", "قطع/ASIN", "إجمالي القطع"]];
+  for (const r of rows)
+    data.push([r.asin, r.title, String(r.qty), String(r.units), String(r.qty * r.units)]);
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws["!cols"] = [{ wch: 14 }, { wch: 45 }, { wch: 14 }, { wch: 12 }, { wch: 16 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "كمية لكل ASIN");
   XLSX.writeFile(wb, "po-asins.xlsx");
@@ -34,12 +36,12 @@ export default function PoPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [lines, setLines] = useState<PoLine[] | null>(null);
+  const [rows, setRows] = useState<PoRow[] | null>(null);
   const [fileName, setFileName] = useState("");
 
   const handleFile = async (file: File) => {
     setError("");
-    setLines(null);
+    setRows(null);
     setFileName(file.name);
     setLoading(true);
     const fd = new FormData();
@@ -48,14 +50,20 @@ export default function PoPage() {
     setLoading(false);
     if (res.ok) {
       const data = await res.json();
-      setLines(data.lines);
+      setRows((data.lines as PoLine[]).map((l) => ({ ...l, units: 1 })));
     } else {
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? "فشل قراءة الملف");
     }
   };
 
-  const totalQty = lines?.reduce((s, l) => s + l.qty, 0) ?? 0;
+  const setUnits = (i: number, val: string) => {
+    const n = Math.max(1, parseInt(val) || 1);
+    setRows((prev) => prev ? prev.map((r, idx) => idx === i ? { ...r, units: n } : r) : prev);
+  };
+
+  const totalAsins = rows?.length ?? 0;
+  const totalUnits = rows?.reduce((s, r) => s + r.qty * r.units, 0) ?? 0;
 
   return (
     <div className="p-4 md:p-8 max-w-3xl mx-auto">
@@ -94,67 +102,89 @@ export default function PoPage() {
         </div>
       )}
 
-      {lines && lines.length > 0 && (
+      {rows && rows.length > 0 && (
         <>
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-orange-600">{lines.length}</p>
+              <p className="text-2xl font-bold text-orange-600">{totalAsins}</p>
               <p className="text-xs text-gray-500 mt-0.5">ASIN مختلف</p>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-orange-600">{totalQty.toLocaleString()}</p>
-              <p className="text-xs text-gray-500 mt-0.5">إجمالي الكمية</p>
+              <p className="text-2xl font-bold text-orange-600">{totalUnits.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mt-0.5">إجمالي القطع الفعلية</p>
             </div>
           </div>
 
-          {/* Two download options */}
+          {/* Download options */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <button
-              onClick={() => downloadSummarySheet(lines)}
+              onClick={() => downloadSummarySheet(rows)}
               className="bg-white border-2 border-orange-400 rounded-xl p-5 text-right hover:bg-orange-50 transition-colors group"
             >
               <div className="text-2xl mb-2">📊</div>
               <p className="font-bold text-gray-900 text-sm">ملخص الأصناف</p>
-              <p className="text-xs text-gray-500 mt-1">الصنف + الكمية الإجمالية مجمّعة</p>
+              <p className="text-xs text-gray-500 mt-1">الصنف + إجمالي القطع مجمّعة</p>
               <p className="text-xs text-orange-600 font-medium mt-3 group-hover:underline">⬇ تحميل Excel</p>
             </button>
-
             <button
-              onClick={() => downloadAsinSheet(lines)}
+              onClick={() => downloadAsinSheet(rows)}
               className="bg-white border-2 border-blue-400 rounded-xl p-5 text-right hover:bg-blue-50 transition-colors group"
             >
               <div className="text-2xl mb-2">🔢</div>
               <p className="font-bold text-gray-900 text-sm">كمية لكل ASIN</p>
-              <p className="text-xs text-gray-500 mt-1">ASIN + اسم الصنف + الكمية</p>
+              <p className="text-xs text-gray-500 mt-1">ASIN + كمية + قطع/ASIN + الإجمالي</p>
               <p className="text-xs text-blue-600 font-medium mt-3 group-hover:underline">⬇ تحميل Excel</p>
             </button>
           </div>
 
-          {/* Preview table */}
+          {/* Table with editable units */}
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <p className="text-sm font-semibold text-gray-700">معاينة البيانات</p>
-              <p className="text-xs text-gray-400">{lines.length} صف</p>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">البيانات</p>
+                <p className="text-xs text-gray-400 mt-0.5">عدّل "قطع/ASIN" لو الـ ASIN فيه أكتر من قطعة</p>
+              </div>
+              <p className="text-xs text-gray-400">{rows.length} صف</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-xs text-gray-500">
+                <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
                   <tr>
-                    <th className="px-4 py-2 text-right">ASIN</th>
-                    <th className="px-4 py-2 text-right">الصنف</th>
-                    <th className="px-4 py-2 text-center">الكمية</th>
+                    <th className="px-3 py-2 text-right">ASIN</th>
+                    <th className="px-3 py-2 text-right">الصنف</th>
+                    <th className="px-3 py-2 text-center">كمية الـ PO</th>
+                    <th className="px-3 py-2 text-center">قطع/ASIN</th>
+                    <th className="px-3 py-2 text-center font-bold text-orange-600">إجمالي القطع</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {lines.map((l, i) => (
+                  {rows.map((r, i) => (
                     <tr key={i} className="hover:bg-gray-50">
-                      <td className="px-4 py-2.5 font-mono text-xs text-blue-700 whitespace-nowrap">{l.asin}</td>
-                      <td className="px-4 py-2.5 text-xs text-gray-700 max-w-xs truncate">{l.title}</td>
-                      <td className="px-4 py-2.5 text-center font-bold text-gray-900">{l.qty}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-blue-700 whitespace-nowrap">{r.asin}</td>
+                      <td className="px-3 py-2.5 text-xs text-gray-700 max-w-[180px] truncate">{r.title}</td>
+                      <td className="px-3 py-2.5 text-center text-gray-700 font-medium">{r.qty}</td>
+                      <td className="px-3 py-2.5 text-center">
+                        <input
+                          type="number"
+                          min="1"
+                          value={r.units}
+                          onChange={(e) => setUnits(i, e.target.value)}
+                          className="w-16 border border-gray-300 rounded-lg px-2 py-1 text-xs text-center focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium"
+                        />
+                      </td>
+                      <td className="px-3 py-2.5 text-center font-bold text-orange-700">
+                        {r.qty * r.units}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
+                <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                  <tr>
+                    <td colSpan={4} className="px-3 py-2.5 text-xs font-semibold text-gray-600 text-right">الإجمالي</td>
+                    <td className="px-3 py-2.5 text-center font-bold text-orange-700 text-base">{totalUnits.toLocaleString()}</td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
