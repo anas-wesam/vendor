@@ -80,12 +80,12 @@ export default function PoPage() {
           <div className="text-center">
             <div className="text-4xl mb-3">📋</div>
             <p className="text-sm font-medium text-gray-700">اضغط لرفع الـ PO</p>
-            <p className="text-xs text-gray-400 mt-1">PDF فقط</p>
+            <p className="text-xs text-gray-400 mt-1">PDF أو Excel (.xlsx, .xls)</p>
             {fileName && <p className="text-xs text-orange-600 mt-2 font-medium">{fileName}</p>}
           </div>
         )}
       </div>
-      <input ref={inputRef} type="file" accept=".pdf,application/pdf" className="hidden"
+      <input ref={inputRef} type="file" accept=".pdf,.xlsx,.xls,.csv,application/pdf" className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
 
       {error && (
