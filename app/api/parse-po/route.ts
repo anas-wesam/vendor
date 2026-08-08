@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 
+// Convert Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩) to Western digits
+function toWestern(s: string): string {
+  return String(s).replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace(/[^\d.]/g, "");
+}
+
 export interface PoLine {
   asin: string;
   title: string;
@@ -47,31 +53,33 @@ function extractFromExcel(buffer: Buffer): PoLine[] {
       raw: false,
     }) as string[][];
 
-    // Find header row — look for a row that has ASIN-like header
     let asinCol = -1;
     let qtyCol = -1;
     let titleCol = -1;
 
-    for (let r = 0; r < Math.min(rows.length, 15); r++) {
-      const row = rows[r].map((c) => String(c).toLowerCase());
-      const ai = row.findIndex((c) => c.includes("asin"));
+    // Scan up to row 20 to find the header row
+    for (let r = 0; r < Math.min(rows.length, 20); r++) {
+      const row = rows[r].map((c) => String(c).toLowerCase().trim());
+      const ai = row.findIndex((c) => c === "asin" || c.includes("asin"));
       const qi = row.findIndex((c) =>
-        c.includes("qty") || c.includes("quantity") || c.includes("كمية") || c.includes("ordered")
+        c === "الكمية" || c.includes("الكمية") ||
+        c.includes("qty") || c.includes("quantity") || c.includes("ordered")
       );
       const ti = row.findIndex((c) =>
-        c.includes("title") || c.includes("product") || c.includes("item") || c.includes("description") || c.includes("اسم")
+        c === "العنوان" || c.includes("العنوان") ||
+        c.includes("title") || c.includes("product") || c.includes("description")
       );
+
       if (ai !== -1 && qi !== -1) {
         asinCol = ai; qtyCol = qi; titleCol = ti;
-        // parse data rows below
+
         for (let d = r + 1; d < rows.length; d++) {
           const asin = String(rows[d][asinCol] ?? "").trim().toUpperCase();
           if (!ASIN_RE.test(asin)) continue;
-          const rawQty = String(rows[d][qtyCol] ?? "").replace(/[^0-9]/g, "");
-          const qty = parseInt(rawQty) || 0;
+          const qty = parseInt(toWestern(String(rows[d][qtyCol] ?? ""))) || 0;
           if (qty === 0) continue;
           const title = titleCol !== -1 ? String(rows[d][titleCol] ?? "").trim() : asin;
-          const existing = result.find((r) => r.asin === asin);
+          const existing = result.find((x) => x.asin === asin);
           if (existing) existing.qty += qty;
           else result.push({ asin, title: title || asin, qty });
         }
@@ -87,13 +95,14 @@ function extractFromExcel(buffer: Buffer): PoLine[] {
         let title = "";
         for (const cell of row) {
           const s = String(cell).trim();
-          if (ASIN_RE.test(s.toUpperCase())) asin = s.toUpperCase().match(ASIN_RE)![1];
-          const n = parseInt(s.replace(/[^0-9]/g, ""));
+          const upper = s.toUpperCase();
+          if (ASIN_RE.test(upper)) asin = upper.match(ASIN_RE)![1];
+          const n = parseInt(toWestern(s));
           if (!isNaN(n) && n > 0 && n < 10000 && qty === 0) qty = n;
-          if (s.length > 10 && !ASIN_RE.test(s) && !title) title = s;
+          if (s.length > 10 && !ASIN_RE.test(upper) && !title) title = s;
         }
         if (asin && qty > 0) {
-          const existing = result.find((r) => r.asin === asin);
+          const existing = result.find((x) => x.asin === asin);
           if (existing) existing.qty += qty;
           else result.push({ asin, title: title || asin, qty });
         }
