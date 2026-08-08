@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/firebase";
 import { getProductWithRelations } from "@/lib/firestore-helpers";
+import type { Firestore } from "firebase-admin/firestore";
 
 export async function GET() {
   const db = getDb();
@@ -60,17 +61,31 @@ export async function GET() {
   return NextResponse.json(products);
 }
 
+async function nextSku(db: Firestore): Promise<string> {
+  const snap = await db.collection("products").get();
+  let max = 0;
+  for (const doc of snap.docs) {
+    const sku = doc.data().sku as string | undefined;
+    if (sku) {
+      const n = parseInt(sku.replace(/\D/g, ""));
+      if (!isNaN(n) && n > max) max = n;
+    }
+  }
+  return `SKU-${String(max + 1).padStart(3, "0")}`;
+}
+
 export async function POST(req: NextRequest) {
   const db = getDb();
   const body = await req.json();
   const { name, description, imageUrl, brand, category, supplierIds = [] } = body;
   if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
 
+  const sku = await nextSku(db);
   const now = new Date().toISOString();
   const ref = await db.collection("products").add({
     name, description: description || null, imageUrl: imageUrl || null,
     brand: brand || null, category: category || null,
-    supplierIds, createdAt: now, updatedAt: now,
+    sku, supplierIds, createdAt: now, updatedAt: now,
   });
   const product = await getProductWithRelations(ref.id);
   return NextResponse.json(product, { status: 201 });

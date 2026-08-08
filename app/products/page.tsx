@@ -32,6 +32,7 @@ export interface Asin {
 
 export interface Product {
   id: string;
+  sku: string | null;
   name: string;
   description: string | null;
   imageUrl: string | null;

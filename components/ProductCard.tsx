@@ -90,7 +90,12 @@ export default function ProductCard({ product, onRefresh }: { product: Product; 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <h2 className="font-semibold text-gray-900 text-base">{product.name}</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-semibold text-gray-900 text-base">{product.name}</h2>
+                {product.sku && (
+                  <span className="px-2 py-0.5 text-xs bg-gray-800 text-white rounded font-mono">{product.sku}</span>
+                )}
+              </div>
               {product.brand && <p className="text-xs text-gray-500 mt-0.5">{product.brand}</p>}
               <div className="flex flex-wrap gap-1 mt-1">
                 {product.category && (

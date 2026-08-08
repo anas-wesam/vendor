@@ -17,6 +17,7 @@ export default function EditProductModal({
 }) {
   const [form, setForm] = useState({
     name: product.name,
+    sku: product.sku ?? "",
     brand: product.brand ?? "",
     category: product.category ?? "",
     description: product.description ?? "",
@@ -45,7 +46,7 @@ export default function EditProductModal({
     const res = await fetch(`/api/products/${product.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, supplierIds: selectedSupplierIds }),
+      body: JSON.stringify({ ...form, sku: form.sku || null, supplierIds: selectedSupplierIds }),
     });
     setLoading(false);
     if (res.ok) onSave();
@@ -66,15 +67,28 @@ export default function EditProductModal({
             <ImageUpload value={form.imageUrl} onChange={(url) => setForm({ ...form, imageUrl: url })} />
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">اسم المنتج *</label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              autoComplete="off"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-            />
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">اسم المنتج *</label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                autoComplete="off"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">SKU</label>
+              <input
+                type="text"
+                value={form.sku}
+                onChange={(e) => setForm({ ...form, sku: e.target.value.toUpperCase() })}
+                autoComplete="off"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-400"
+                placeholder="SKU-001"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
